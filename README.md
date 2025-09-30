@@ -17,7 +17,7 @@ A simulação é feita com **Pygame**, permitindo visualizar o movimento do bra�
 
 Clone este repositório:  
 ```bash
-git clone https://github.com/usuario/2dof-inverse-kinematics.git
+git clone https://github.com/joaopedro-prog/InverseKinematics_Pygame.git/
 cd 2dof-inverse-kinematics
 ```
 
