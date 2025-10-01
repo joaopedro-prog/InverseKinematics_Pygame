@@ -17,16 +17,14 @@ L2 = 100
 # Inicializa o Pygame
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Simulador de Braço Robótico 2D")
+pygame.display.set_caption("Inverse Kinematics - Demo") 
 font = pygame.font.Font(None, 24)
 
 # Sliders e valores iniciais
-angle1 = 90
-angle2 = 180
-entry_x = 0
+entry_x = 90
 entry_y = 0
 slider_values = [entry_x, entry_y]
-slider_labels = [ "Entry X:", "Entry Y:"]
+slider_labels = ["Entry X:", "Entry Y:"]
 slider_ranges = [700, 700]  # Define o intervalo máximo dos sliders
 slider_rects = [pygame.Rect(10, HEIGHT - 160 + i * 40, 200, 20) for i in range(len(slider_labels))]
 slider_knobs = [pygame.Rect(10 + int((slider_values[i] / slider_ranges[i]) * 200), HEIGHT - 160 + i * 40, 10, 20) for i in range(len(slider_labels))]
@@ -44,56 +42,59 @@ while running:
     pygame.draw.line(screen, BLACK, (WIDTH // 2, 0), (WIDTH // 2, HEIGHT), 1)
     pygame.draw.line(screen, BLACK, (0, HEIGHT // 2), (WIDTH, HEIGHT // 2), 1)
     
-    
-    
-    desired_x = slider_values[slider_labels.index("Entry X:")] -200
-    desired_y = slider_values[slider_labels.index("Entry Y:")] -200
+    desired_x = slider_values[0]
+    desired_y = slider_values[1]
+
 
     # mouse_x, mouse_y = pygame.mouse.get_pos()
     # desired_x = mouse_x - WIDTH // 2
     # desired_y = HEIGHT // 2 - mouse_y
 
-    if math.hypot(desired_x,desired_y) < L1 + L2:
 
-        beta = math.atan2(desired_y,desired_x+1e-10)
-        phi = math.acos( (math.sqrt( math.pow(desired_x,2) + math.pow(desired_y,2) )/2)/L1 )
-        alpha = phi + beta
+    if math.hypot(desired_x,desired_y) <= L1 + L2 and math.hypot(desired_x,desired_y) > L1-L2:
+        try:
 
-        theta =  2*phi + math.radians(180)
+                    
+            beta = math.acos( ((L1**2)+(desired_x**2)+(desired_y**2)-(L2**2))/(2*L1*math.hypot(desired_x,desired_y)) )
+
+            theta1 = beta + math.atan2(desired_y,desired_x)
+            theta2 = math.acos( ((L1**2)+(L2**2)-(desired_x**2)-(desired_y**2))/(2*L1*L2) )
 
 
+            angle1 = theta1
+            angle2 = theta2
 
-        angle1 = alpha
-        angle2 = theta
 
-        angle1 = -angle1 
-        angle2 = angle2 - math.radians(180) 
-        
-        
-        joint1_x = base_x + L1 * math.cos(angle1)
-        joint1_y = base_y + L1 * math.sin(angle1)
-        joint2_x = joint1_x + L2 * math.cos(angle1 + angle2)
-        joint2_y = joint1_y + L2 * math.sin(angle1 + angle2)
-        
-        # Desenha o braço
-        pygame.draw.line(screen, BLACK, (base_x, base_y), (joint1_x, joint1_y), 5)
-        pygame.draw.line(screen, RED, (joint1_x, joint1_y), (joint2_x, joint2_y), 5)
-        pygame.draw.circle(screen, BLUE, (int(joint1_x), int(joint1_y)), 6)
-        pygame.draw.circle(screen, BLUE, (int(joint2_x), int(joint2_y)), 6)
-        
-        # Exibe coordenadas
-        coord_text = font.render(f"End Effector: ({int(joint2_x - WIDTH // 2)}, {int(HEIGHT // 2 - joint2_y)})", True, BLACK)
-        # screen.blit(coord_text, (10, 10))
-        pygame.draw.line(screen, BLACK, (round(int(joint2_x)),0), (round(int(joint2_x)),HEIGHT), 1)
-        pygame.draw.line(screen, BLACK, (0,round(int(joint2_y))), (WIDTH,round(int(joint2_y))), 1)
-        
-        desired_text = font.render(f"Desired: ({desired_x +200};{desired_y + 200})", True, BLACK)
-        screen.blit(desired_text, (10, 30))
+            angle1 = - angle1  # Ajusta para que 0° seja para a direita
+            angle2 = - angle2 - math.radians(180) # Ajusta para que 180° seja alinhado com J1
+            
+            
+            joint1_x = base_x + L1 * math.cos(angle1)
+            joint1_y = base_y + L1 * math.sin(angle1)
+            joint2_x = joint1_x + L2 * math.cos(angle1 + angle2)
+            joint2_y = joint1_y + L2 * math.sin(angle1 + angle2)
+            
+            # Desenha o braço
+            pygame.draw.line(screen, BLACK, (base_x, base_y), (joint1_x, joint1_y), 5)
+            pygame.draw.line(screen, RED, (joint1_x, joint1_y), (joint2_x, joint2_y), 5)
+            pygame.draw.circle(screen, BLUE, (int(joint1_x), int(joint1_y)), 6)
+            pygame.draw.circle(screen, BLUE, (int(joint2_x), int(joint2_y)), 6)
+            
+            # Exibe coordenadas
+            coord_text = font.render(f"End Effector: ({int(joint2_x - WIDTH // 2)}, {int(HEIGHT // 2 - joint2_y)})", True, BLACK)
+            screen.blit(coord_text, (10, 10))
+            pygame.draw.line(screen, BLACK, (round(int(joint2_x)),0), (round(int(joint2_x)),HEIGHT), 1)
+            pygame.draw.line(screen, BLACK, (0,round(int(joint2_y))), (WIDTH,round(int(joint2_y))), 1)
+            
+            desired_text = font.render(f"Desired: ({desired_x};{desired_y})", True, BLACK)
+            screen.blit(desired_text, (10, 30))
 
-        J1angle_text = font.render(f"J1angle: ({math.degrees(angle1)})", True, BLACK)
-        screen.blit(J1angle_text, (10, 50))
-        J2angle_text = font.render(f"J2angle: ({math.degrees(angle2)})", True, BLACK)
-        screen.blit(J2angle_text, (10, 70))
+            J1angle_text = font.render(f"J1angle: ({math.degrees(angle1)})", True, BLACK)
+            screen.blit(J1angle_text, (10, 50))
+            J2angle_text = font.render(f"J2angle: ({math.degrees(angle2)})", True, BLACK)
+            screen.blit(J2angle_text, (10, 70))
+        except:
+            pass
     else:
 
         error_text = font.render(f"Out of envelope", True, RED)
